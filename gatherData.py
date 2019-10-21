@@ -65,7 +65,6 @@ class DataCollector:
 
         wave_file = open(filename, "rb")
 
-        riff = wave_file.read(12)
         fmt = wave_file.read(36)
 
         num_channels_string = fmt[10:12]
@@ -79,17 +78,13 @@ class DataCollector:
 
     @staticmethod
     def extract_mel_spectrogram(audio):
-        # audio, sample_rate = librosa.load(file_name)
-        # mfccs = librosa.feature.mfcc(y=audio, sr=sample_rate, n_mfcc=80)
-        # mfccsscaled = np.mean(mfccs.T, axis=0)
         mel_spec = librosa.feature.melspectrogram(y=audio,
                                                   sr=conf.sample_rate,
                                                   n_fft=conf.fft_window_size,
                                                   hop_length=conf.hop_length,
                                                   window='hann')
-        # result_scaled = np.mean(mfccs.T, axis=0)
-        result_scaled = mel_spec
-        return result_scaled
+
+        return mel_spec
 
     @staticmethod
     def plot_spectrum(data, show=False):
@@ -159,9 +154,7 @@ class DataCollector:
 
     def collect_training_data(self):
         print('Found {} entries in CSV file.'.format(len(self.meta_list_train)))
-        # [{'start': 12, 'end': 58, 'chunk': [<list>]}]
         chunks = self.chunk_list(self.meta_list_train, conf.threads_used)
-        # chunks = self.chunk_list(self.meta_list, 1)
         threads = []
         results = []
         print('Working with {} Threads.'.format(conf.threads_used))
@@ -231,7 +224,3 @@ def run_testing():
     plt.ylabel("Mel-scaled Frequency (Hz)")
     plt.imshow(librosa.power_to_db(testing[4]['data'], ref=np.max).reshape(128, 256))
     plt.show()
-
-    # collector.plot_spectrum(testing[4], True)
-
-# collector.collect_data()

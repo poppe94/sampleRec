@@ -24,7 +24,6 @@ hop_length = 512
 epochs = 5
 batch_size = 16
 model_file_name = 'model_{time}_{epoch}e.h5'.format(epoch=epochs, time='{time}')
-
 encoder_output_layer = 16
 
 

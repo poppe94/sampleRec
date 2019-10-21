@@ -119,16 +119,13 @@ class Autoencoder:
 
     def compile_architecture(self):
         input_img = Input(shape=self.shape)
-        # self.orig_architecture(input_img)
-        # self.some_architecture(input_img)
-        # self.just_scaling(input_img)
         self.resNet_like_architecture(input_img)
 
-        learning_rate = 1.0
-        decay_rate = learning_rate / conf.epochs
-        # rho and epsilon left at defaults
-        adadelta = Adadelta(lr=learning_rate, rho=0.95, epsilon=1e-08, decay=decay_rate)
-        # self.model.compile(optimizer=adadelta, loss='binary_crossentropy')
+        # when using custom lr decay
+        # learning_rate = 1.0
+        # decay_rate = learning_rate / conf.epochs
+        # adadelta = Adadelta(lr=learning_rate, rho=0.95, epsilon=1e-08, decay=decay_rate)
+        # # self.model.compile(optimizer=adadelta, loss='binary_crossentropy')
 
         self.model.compile(optimizer='adam', loss='mean_squared_error')
 
@@ -152,11 +149,9 @@ class Autoencoder:
             x_test = np.load(conf.dir_path + conf.test_np_file)
             x_train = np.load(conf.dir_path + conf.train_np_file)
 
-        # x_test = librosa.util.normalize(x_test)
         x_test = (librosa.power_to_db(x_test, ref=np.max) + 80) / 80
         x_test = self.reshape(x_test)
 
-        # x_train = librosa.util.normalize(x_train)
         x_train = (librosa.power_to_db(x_train, ref=np.max) + 80) / 80
         x_train = self.reshape(x_train)
 
@@ -233,37 +228,14 @@ class Autoencoder:
 
     def test_encode(self):
         x_test, _ = self.load_data()
-
-
         encoder_layer = Model(self.model.input, self.model.layers[conf.encoder_output_layer].output)
         enc_from_model = encoder_layer.predict(x_test)
-        # enc_from_layer = self.encoder.predict(x_test)
 
         n = 10
-        # plt.figure(figsize=(18, 4))
         for i in range(1, n):
-            # display original
-            # ax = plt.subplot(3, n, i)
-            # back_scaled = x_test[i] * 80 - 80
-            # librosa.display.specshow(back_scaled.reshape(128, 256),
-            #                          y_axis='mel',
-            #                          fmax=8000,
-            #                          x_axis='time')
-            # ax.get_xaxis().set_visible(False)
-            # ax.get_yaxis().set_visible(False)
-
-            # display reconstruction
-            # ax = plt.subplot(3, n, i)
-            # # back_scaled = decoded_specs[i] * 80 - 80
-            # plt.imshow(enc_from_layer[i].reshape(16, 8*8))
-            # ax.get_xaxis().set_visible(False)
-            # ax.get_yaxis().set_visible(False)
-
-            ax = plt.subplot(3, n, i + n)
-            # back_scaled = decoded_specs[i] * 80 - 80
-            plt.imshow(enc_from_model[i].reshape(16, 8*8))
+            ax = plt.subplot(1, n, i)
+            plt.imshow(enc_from_model[i].reshape(16, 8*8).T)
             ax.get_xaxis().set_visible(False)
             ax.get_yaxis().set_visible(False)
-
         plt.show()
 

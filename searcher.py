@@ -1,4 +1,3 @@
-
 import os
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
@@ -41,25 +40,28 @@ class Searcher:
         return self.encoder.predict(spec_data)
 
     def draw_features(self, spec_data, recon_data, feature_vector):
-        plt.figure()
-        plt.axis('off')
-        librosa.display.specshow(spec_data.reshape(128, 256),
-                                 y_axis='mel',
-                                 fmax=8000,
-                                 x_axis='time')
-        plt.show()
-        plt.figure()
-        plt.axis('off')
-        back_scaled = recon_data * 80 - 80
-        librosa.display.specshow(back_scaled.reshape(128, 256),
-                                 y_axis='mel',
-                                 fmax=8000,
-                                 x_axis='time')
-        plt.show()
-        plt.figure()
-        plt.axis('off')
-        plt.imshow(feature_vector.reshape(16, 8 * 8))
-        plt.show()
+        if spec_data is not None:
+            plt.figure()
+            plt.axis('off')
+            librosa.display.specshow(spec_data.reshape(128, 256),
+                                     y_axis='mel',
+                                     fmax=8000,
+                                     x_axis='time')
+            plt.show()
+        if recon_data is not None:
+            plt.figure()
+            plt.axis('off')
+            back_scaled = recon_data * 80 - 80
+            librosa.display.specshow(back_scaled.reshape(128, 256),
+                                     y_axis='mel',
+                                     fmax=8000,
+                                     x_axis='time')
+            plt.show()
+        if feature_vector is not None:
+            plt.figure()
+            plt.axis('off')
+            plt.imshow(feature_vector.reshape(16, 8 * 8))
+            plt.show()
 
     def create_search_space(self):
         self.data = self.collector.collect_training_data()
@@ -101,8 +103,6 @@ class Searcher:
             self.create_search_space()
 
     def compute_tsne(self, draw=False):
-
-        # Build TSNE model
         tsne = TSNE(n_components=2, verbose=1, perplexity=40, n_iter=300)
 
         shape = self.space_data.shape[1] * self.space_data.shape[2] * self.space_data.shape[3]
@@ -189,8 +189,8 @@ class Searcher:
             vec = self.get_feature_vector(results[0])
         vec = np.reshape(vec, 8 * 16 * 8)
         vec = vec / np.max(vec)
-
-        pca = PCA(n_components=2)
+        # self.draw_features(None, None, vec)
+        pca = PCA(n_components=64)
 
         shape = self.space_data.shape[1] * self.space_data.shape[2] * self.space_data.shape[3]
         data_reshaped = np.reshape(self.space_data, (self.space_data.shape[0], shape))
@@ -201,23 +201,10 @@ class Searcher:
         pca_result = pca_result[:-1]
         kd_tree = cKDTree(pca_result, leafsize=100)
 
-        d, index = kd_tree.query(input, k=3, distance_upper_bound=6)
+        d, index = kd_tree.query(input, k=5, distance_upper_bound=6)
         print('Input was ' + filename)
         print('Your recommended files are:')
         for i in index:
             print(self.space_meta[i]['filename'])
         return
 
-# s = Searcher()
-# s.load_space()
-# s.get_recommendation('FSDKaggle2018.audio_test/1cb49809.wav')
-# s.get_recommendation('FSDKaggle2018.audio_test/0d99cfde.wav')
-# s.get_recommendation('FSDKaggle2018.audio_test/3a5f8a0d.wav')
-
-#Your recommended files are:
-# ccedb014.wav
-# 5233fe9c.wav
-# 6bddfa9f.wav
-
-# s.compute_pca(True)
-# s.compute_tsne()
