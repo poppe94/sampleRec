@@ -13,6 +13,9 @@ import conf
 
 
 class MyThread(Thread):
+    """
+    defines the threads for multi threaded file search.
+    """
     def __init__(self, group=None, target=None, name=None,
                  args=(), kwargs={}, Verbose=None):
         Thread.__init__(self, group, target, name, args, kwargs)
@@ -30,13 +33,19 @@ class MyThread(Thread):
 
 
 class DataCollector:
-
+    """
+    This class handles the data set collection and Feature extraction.
+    """
     features_train = []
     features_test = []
     meta_list_train = []
     meta_list_test = []
 
     def __init__(self, path):
+        """
+        Initializes the meta files from the dataset.
+        :param path: main directory path
+        """
         self.path = path
         self.audiodf = None
         with open(conf.meta_train) as f:
@@ -46,6 +55,12 @@ class DataCollector:
 
     @staticmethod
     def chunk_list(seq, num):
+        """
+        Simply divides a list into n equal chunks.
+        :param seq: input list
+        :param num: number of parts
+        :return: list of chunks from input list
+        """
         avg = len(seq) / float(num)
         out = []
         last = 0.0
@@ -62,7 +77,11 @@ class DataCollector:
 
     @staticmethod
     def read_file_properties(filename):
-
+        """
+        Provides some data analysis for an audio file.
+        :param filename: input audio file
+        :return: infos about audio file
+        """
         wave_file = open(filename, "rb")
 
         fmt = wave_file.read(36)
@@ -78,6 +97,11 @@ class DataCollector:
 
     @staticmethod
     def extract_mel_spectrogram(audio):
+        """
+        Computes the spectrogram from the provided audio data.
+        :param audio: audio data as numpy array
+        :return: mel scaled spectrogram
+        """
         mel_spec = librosa.feature.melspectrogram(y=audio,
                                                   sr=conf.sample_rate,
                                                   n_fft=conf.fft_window_size,
@@ -88,6 +112,11 @@ class DataCollector:
 
     @staticmethod
     def plot_spectrum(data, show=False):
+        """
+        Plots a pectrogram.
+        :param data: spectral data
+        :param show: shows and saves the plot when true
+        """
         plt.figure(figsize=(10, 4))
         librosa.display.specshow(librosa.amplitude_to_db(data['data'], ref=np.max),
                                  y_axis='mel',
@@ -104,6 +133,10 @@ class DataCollector:
 
     @staticmethod
     def plot_mfcc(data):
+        """
+        Plots and shows mfcc data.
+        :param data: mfc coefficients
+        """
         plt.figure(figsize=(10, 4))
         librosa.display.specshow(data['data'], x_axis='time')
         plt.colorbar(format='%+2.0f dB')
@@ -112,6 +145,9 @@ class DataCollector:
         plt.show()
 
     def analyse_file(self):
+        """
+        Provides som data set analysis.
+        """
         audiodata = []
         for row in self.meta_list_train:
             file_path = self.path + 'FSDKaggle2018.audio_train/' + row['fname']
@@ -121,6 +157,12 @@ class DataCollector:
         self.audiodf = pd.DataFrame(audiodata, columns=['num_channels', 'sample_rate', 'bit_depth'])
 
     def generate_features_threading(self, input_dict, directory, results):
+        """
+        Loads the audio files and filters to short files. From longer files multiple spectrograms are generated.
+        :param input_dict: list with filenames to compute
+        :param directory: directory of files
+        :param results: computed data to collect when all threads are finished
+        """
         print('Started thread {}.'.format(current_thread().name))
         for row in input_dict['chunk']:
             splits = []
@@ -153,6 +195,10 @@ class DataCollector:
             #     break
 
     def collect_training_data(self):
+        """
+        Handles the collection of the training data.
+        :return: array with spectrograms of training data
+        """
         print('Found {} entries in CSV file.'.format(len(self.meta_list_train)))
         chunks = self.chunk_list(self.meta_list_train, conf.threads_used)
         threads = []
@@ -168,6 +214,10 @@ class DataCollector:
         return results
 
     def collect_testing_data(self):
+        """
+        Handles the collection of the testing data.
+        :return: array with spectrograms of testing data
+        """
         print('Found {} entries in CSV file.'.format(len(self.meta_list_test)))
         # [{'start': 12, 'end': 58, 'chunk': [<list>]}]
         chunks = self.chunk_list(self.meta_list_test, conf.threads_used)
@@ -185,6 +235,9 @@ class DataCollector:
         return results
 
     def collect_data(self):
+        """
+        Initiates the collection of training and testing data.
+        """
         if not self.meta_list_train:
             raise Exception('Member meta_list is empty.')
         print('Collecting test data.')
@@ -193,6 +246,9 @@ class DataCollector:
         self.features_train = self.collect_training_data()
 
     def save_data(self):
+        """
+        Saves the testing and training data arrays to disk.
+        """
         if self.features_test:
             x_test = np.array([entry['data'] for entry in self.features_test])
             np.save(conf.dir_path + conf.test_np_file, x_test)
@@ -204,6 +260,9 @@ class DataCollector:
 
 
 def run_testing():
+    """
+    This just draws some spectrograms for testing.
+    """
     collector = DataCollector(conf.dir_path)
     testing = collector.collect_testing_data()
 

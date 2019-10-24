@@ -21,7 +21,8 @@ import conf
 
 
 class Searcher:
-
+    """This class wraps the searcher, creating a searchespace and giving recommendations.
+    """
     def __init__(self):
         self.data = []
         self.space_data = []
@@ -35,11 +36,21 @@ class Searcher:
         self.encoder = Model(self.ae.model.input, self.ae.model.layers[conf.encoder_output_layer].output)
 
     def get_feature_vector(self, spec_data):
+        """
+        This generates a feature vector from provided spectrogram data using the trained encoder model.
+        :param spec_data: spectrogram data
+        :return: A feature vector with 1024 dimensions.
+        """
         spec_data = (librosa.power_to_db(spec_data, ref=np.max) + 80) / 80
         spec_data = np.reshape(spec_data, (1,) + self.ae.shape)
         return self.encoder.predict(spec_data)
 
     def draw_features(self, spec_data, recon_data, feature_vector):
+        """Draw data in parameters.
+        :param spec_data:
+        :param recon_data:
+        :param feature_vector:
+        """
         if spec_data is not None:
             plt.figure()
             plt.axis('off')
@@ -64,6 +75,10 @@ class Searcher:
             plt.show()
 
     def create_search_space(self):
+        """
+        This creates the search space for the recommendation. Uses data from DataCollector class.
+        From this data Feature vectors are computed. These are also saved on disk.
+        """
         self.data = self.collector.collect_training_data()
 
         result = collections.defaultdict(list)
@@ -94,6 +109,9 @@ class Searcher:
             json.dump(self.space_meta, f)
 
     def load_space(self):
+        """
+        Loads a saved feature vector file.
+        """
         try:
             self.space_data = np.load(conf.dir_path + conf.space_file)
             with open(conf.dir_path + conf.space_meta_file, 'r') as f:
@@ -103,6 +121,10 @@ class Searcher:
             self.create_search_space()
 
     def compute_tsne(self, draw=False):
+        """
+        Creates a 2D feature space and cann plot an image of this space.
+        :param draw: Draws pyplot when true.
+        """
         tsne = TSNE(n_components=2, verbose=1, perplexity=40, n_iter=300)
 
         shape = self.space_data.shape[1] * self.space_data.shape[2] * self.space_data.shape[3]
@@ -132,6 +154,10 @@ class Searcher:
             plt.show()
 
     def compute_pca(self, draw=False):
+        """
+        Creates a 2D feature space and can plot an image of this space.
+        :param draw: Draws pyplot when true.
+        """
         pca = PCA(n_components=2)
 
         shape = self.space_data.shape[1] * self.space_data.shape[2] * self.space_data.shape[3]
@@ -159,6 +185,13 @@ class Searcher:
             plt.show()
 
     def get_recommendation(self, filename):
+        """
+        This searches the recommended audio files for the provided audio sample. From the input a spectrogram is
+        extracted and the feature vector is computed. A kd-tree is utilized to find five neighbours to the feature
+        vector of the input.
+        :param filename: Audio sample to find recommendations for.
+        :return: The filenames of the five closest samples.
+        """
         results = []
         splits = []
         feature_vectors = []

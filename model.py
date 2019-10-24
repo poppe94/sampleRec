@@ -22,7 +22,9 @@ import conf
 
 
 class Autoencoder:
-
+    """
+    This class handles the model creation and training, model architectures are added here.
+    """
     shape = (128, 256, 1)           # dim of 32,768
 
     def just_scaling(self, input_img):
@@ -118,6 +120,10 @@ class Autoencoder:
         self.model = Model(input_img, decoder_output)
 
     def compile_architecture(self):
+        """
+        Compiles the model architecture and sets an optimizer for training.
+        :return:
+        """
         input_img = Input(shape=self.shape)
         self.resNet_like_architecture(input_img)
 
@@ -136,9 +142,18 @@ class Autoencoder:
         pass
 
     def reshape(self, data):
+        """
+        Reshape data to the model input shape
+        :param data:
+        :return: reshaped data
+        """
         return np.reshape(data, ((len(data),) + self.shape))
 
     def load_data(self):
+        """
+        Loads the needed data for training. Triggers data collection when array files are not found.
+        :return: test and training data arrays
+        """
         try:
             x_test = np.load(conf.dir_path + conf.test_np_file)
             x_train = np.load(conf.dir_path + conf.train_np_file)
@@ -158,6 +173,10 @@ class Autoencoder:
         return x_test, x_train
 
     def get_callbacks(self):
+        """
+        Creates some callbacks used in training
+        :return: list of callbacks
+        """
         learning_rate_reduction = ReduceLROnPlateau(monitor='loss',
                                                     patience=3,
                                                     verbose=1,
@@ -171,6 +190,9 @@ class Autoencoder:
         return [learning_rate_reduction, checkpoint]
 
     def train_model(self):
+        """
+        Trains the model and saves it to disk.
+        """
         x_test, x_train = self.load_data()
 
         now = datetime.now().strftime('%Y%m%d-%H%M%S')
@@ -192,9 +214,16 @@ class Autoencoder:
         self.encoder.save(conf.dir_path + 'models/' + 'encoder_' + conf.model_file_name.format(time=now))
 
     def load_model(self, model_file):
+        """
+        Loads an keras network model from disk.
+        :param model_file:
+        """
         self.model = load_model(conf.dir_path + model_file)
 
     def testing_model(self):
+        """
+        Computes a score for the model and draws some original and decoded specs for comparison.
+        """
         x_test, _ = self.load_data()
 
         decoded_specs = self.model.predict(x_test)
@@ -227,6 +256,9 @@ class Autoencoder:
         plt.show()
 
     def test_encode(self):
+        """
+        Draws some feature vectors with the encoder part of the model.
+        """
         x_test, _ = self.load_data()
         encoder_layer = Model(self.model.input, self.model.layers[conf.encoder_output_layer].output)
         enc_from_model = encoder_layer.predict(x_test)
